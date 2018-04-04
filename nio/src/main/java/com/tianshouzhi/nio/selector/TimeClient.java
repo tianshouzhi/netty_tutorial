@@ -1,4 +1,4 @@
-package com.tianshouzhi.nio.channel.sample;
+package com.tianshouzhi.nio.selector;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;

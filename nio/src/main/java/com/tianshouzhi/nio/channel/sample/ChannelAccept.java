@@ -1,4 +1,4 @@
-package com.tianshouzhi.nio.channel;
+package com.tianshouzhi.nio.channel.sample;
 
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
