@@ -7,6 +7,8 @@ import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.handler.timeout.IdleState;
 import io.netty.handler.timeout.IdleStateEvent;
 
+import java.util.Date;
+
 /**
  * Created by tianshouzhi on 2018/4/22.
  */
@@ -20,7 +22,7 @@ public class HeartbeatServerHandler extends ChannelInboundHandlerAdapter {
 			response.writeBytes(Unpooled.buffer().writeBytes("PONG\n".getBytes()));
 			ctx.writeAndFlush(response); // (1)
 			heartbeatCount++;
-			System.out.println(" receive heartbeat from " + ctx.channel().remoteAddress() + ",count:" + heartbeatCount);
+			System.out.println(new Date().toLocaleString()+": receive heartbeat from " + ctx.channel().remoteAddress() + ",count:" + heartbeatCount);
 		} else {
 			heartbeatCount = 0;
 			super.channelRead(ctx, msg);
@@ -34,7 +36,7 @@ public class HeartbeatServerHandler extends ChannelInboundHandlerAdapter {
 			// 读超时，关闭连接
 			if (e.state() == IdleState.READER_IDLE) {
 				ctx.close();
-				System.out.println("READER_IDLE 读超时，关闭客户端连接");
+				System.out.println(new Date().toLocaleString()+":READER_IDLE 读超时，关闭客户端连接");
 			}
 		}
 	}
