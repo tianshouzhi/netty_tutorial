@@ -1,44 +1,34 @@
 package com.tianshouzhi.time;
 
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 
+import java.util.Date;
+
 /**
- * Created by tianshouzhi on 2018/3/9.
+ * Created by tianshouzhi on 2018/4/14.
  */
 public class TimeServerHandler extends ChannelInboundHandlerAdapter {
 
-//	@Override
-//	public void channelActive(final ChannelHandlerContext ctx) { // (1)
-////		System.out.println(ctx.channel().config());
-////		System.out.println(ctx.alloc());
-//		final ByteBuf time = ctx.alloc().buffer(4); // (2)
-//		time.writeInt((int) (System.currentTimeMillis() / 1000L + 2208988800L));
-//
-//		final ChannelFuture f = ctx.writeAndFlush(time); // (3)
-//		f.addListener(new ChannelFutureListener() {
-//			@Override
-//			public void operationComplete(ChannelFuture future) {
-//				assert f == future;
-//				ctx.close();
-//			}
-//		}); // (4)
-//	}
-//
-//	@Override
-//	public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
-//		cause.printStackTrace();
-//		ctx.close();
-//	}
+    public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
+        String body = (String) msg;
+        System.out.println("The time server receive order:" + body);
+        String currentTime = "QUERY TIME ORDER".equalsIgnoreCase(body) ? new Date(System.currentTimeMillis()).toString()
+                : "BAD ORDER";
+        currentTime = currentTime + System.getProperty("line.separator");
+        ByteBuf resp = Unpooled.copiedBuffer(currentTime.getBytes());
+        ctx.write(resp);
+    }
 
-	@Override
-	public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
-		System.out.println("TimeServerHandler.channelRead");
-//		ByteBufAllocator allocator = ctx.alloc();
-//
-//		ByteBuf buffer = allocator.buffer();
-//		buffer.writeBytes("your response".getBytes());
-		ctx.fireChannelRead(msg);
-//		ctx.writeAndFlush(buffer);
-	}
+    //必须加？
+    public void channelReadComplete(ChannelHandlerContext ctx) {
+        ctx.flush();
+    }
+
+    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
+        cause.printStackTrace();
+        ctx.close();
+    }
 }

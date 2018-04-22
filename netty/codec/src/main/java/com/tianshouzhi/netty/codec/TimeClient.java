@@ -12,6 +12,7 @@ import io.netty.handler.codec.LineBasedFrameDecoder;
 import io.netty.handler.codec.string.StringDecoder;
 
 /**
+ * https://blog.csdn.net/dream_broken/article/details/45392227
  * Created by tianshouzhi on 2018/3/9.
  */
 public class TimeClient {

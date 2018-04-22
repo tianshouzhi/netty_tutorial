@@ -1,4 +1,4 @@
-package com.tianshouzhi.time;
+package com.tianshouzhi.handler.idle;
 
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.ChannelFuture;
@@ -8,13 +8,12 @@ import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
-import io.netty.handler.codec.LineBasedFrameDecoder;
-import io.netty.handler.codec.string.StringDecoder;
+import io.netty.handler.timeout.IdleStateHandler;
 
 /**
- * Created by tianshouzhi on 2018/3/9.
+ * Created by tianshouzhi on 2018/4/22.
  */
-public class TimeClient {
+public class HeartbeatClient {
     public static void main(String[] args) throws Exception {
         String host = "localhost";
         int port = 8080;
@@ -28,9 +27,8 @@ public class TimeClient {
             b.handler(new ChannelInitializer<SocketChannel>() {
                 @Override
                 public void initChannel(SocketChannel ch) throws Exception {
-                    ch.pipeline().addLast(new LineBasedFrameDecoder(1024));
-                    ch.pipeline().addLast(new StringDecoder());
-                    ch.pipeline().addLast(new TimeClientHandler());
+                    ch.pipeline().addLast(new IdleStateHandler(0,20,0));
+                    ch.pipeline().addLast(new HeartbeatClientHandler());
                 }
             });
 

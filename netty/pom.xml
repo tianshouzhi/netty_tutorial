@@ -16,6 +16,8 @@
         <module>buffer</module>
         <module>handler</module>
         <module>codec</module>
+        <module>channel</module>
+        <module>eventloop</module>
     </modules>
 
     <dependencies>
