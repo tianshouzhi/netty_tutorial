@@ -1,5 +1,7 @@
 package com.tianshouzhi.netty.buffer;
 
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.PooledByteBufAllocator;
 import org.junit.Test;
 
 /**
@@ -25,6 +27,9 @@ public class PooledByteBufferAllocatorTest {
 
     @Test
 	public void test() throws InterruptedException {
+		ByteBuf byteBuf = PooledByteBufAllocator.DEFAULT.heapBuffer();
+		System.out.println(byteBuf);
+		System.out.println(byteBuf.unwrap());
 //
 //        final Runtime runtime = Runtime.getRuntime();
 //        System.out.println(ManagementFactory.getRuntimeMXBean().getName());

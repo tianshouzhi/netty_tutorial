@@ -12,23 +12,18 @@ import java.util.Date;
  */
 public class TimeServerHandler extends ChannelInboundHandlerAdapter {
 
-    public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
-        String body = (String) msg;
-        System.out.println("The time server receive order:" + body);
-        String currentTime = "QUERY TIME ORDER".equalsIgnoreCase(body) ? new Date(System.currentTimeMillis()).toString()
-                : "BAD ORDER";
-        currentTime = currentTime + System.getProperty("line.separator");
-        ByteBuf resp = Unpooled.copiedBuffer(currentTime.getBytes());
-        ctx.write(resp);
-    }
+	@Override
+	public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {// 1
+		String request = (String) msg;
+		String response = null;
 
-    //必须加？
-    public void channelReadComplete(ChannelHandlerContext ctx) {
-        ctx.flush();
-    }
-
-    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
-        cause.printStackTrace();
-        ctx.close();
-    }
+		if ("QUERY TIME ORDER".equals(request)) {// 2
+			response = new Date(System.currentTimeMillis()).toString();
+		} else {
+			response = "BAD REQUEST";
+		}
+		response = response + System.getProperty("line.separator");// 3
+		ByteBuf resp = Unpooled.copiedBuffer(response.getBytes());// 4
+		ctx.writeAndFlush(resp);// 5
+	}
 }

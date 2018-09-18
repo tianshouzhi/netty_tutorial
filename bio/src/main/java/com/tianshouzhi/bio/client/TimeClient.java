@@ -16,6 +16,8 @@ public class TimeClient {
         Socket client=null;
         try {
             client=new Socket("127.0.0.1",8080);
+//            ServerSocket server;
+
             writer = new PrintWriter(client.getOutputStream());
             reader = new BufferedReader(new InputStreamReader(client.getInputStream()));
 

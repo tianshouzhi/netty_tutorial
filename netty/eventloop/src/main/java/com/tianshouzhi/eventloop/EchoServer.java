@@ -8,46 +8,49 @@ import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.ServerSocketChannel;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
+import io.netty.util.concurrent.DefaultEventExecutorGroup;
 import io.netty.util.concurrent.DefaultThreadFactory;
+import io.netty.util.concurrent.EventExecutorGroup;
 
 /**
  * Created by tianshouzhi on 2018/4/19.
  */
 public class EchoServer {
 
-    private int port=8080;
+	private int port = 8080;
 
-    public void run() throws Exception {
-        EventLoopGroup bossGroup = new NioEventLoopGroup(1,new DefaultThreadFactory("bossGroup"));
-        //workerGroup即为io线程池
-        EventLoopGroup workerGroup = new NioEventLoopGroup(1,new DefaultThreadFactory("workerGroup"));
-        try {
-            ServerBootstrap b = new ServerBootstrap();
-            b.group(bossGroup, workerGroup)
-                    .channel(NioServerSocketChannel.class)
-                    //handler方法指定的ChannelHandler由bossGroup回调
-                    .handler(new ChannelInitializer<ServerSocketChannel>() {
-                        @Override
-                        protected void initChannel(ServerSocketChannel ch) throws Exception {
-                            ch.pipeline().addLast(new ServerHandler());
-                        }
-                    })
-                    //childHanlder指定的ChannelHandler由workerGroup回调
-                    .childHandler(new ChannelInitializer<SocketChannel>() {
-                        @Override
-                        public void initChannel(SocketChannel ch) throws Exception {
-                            ch.pipeline().addLast(new ClientHandler());
-                        }
-                    });
-            ChannelFuture f = b.bind(port).sync();
-            f.channel().closeFuture().sync();
-        } finally {
-            workerGroup.shutdownGracefully();
-            bossGroup.shutdownGracefully();
-        }
-    }
+	public void run() throws Exception {
+		EventLoopGroup bossGroup = new NioEventLoopGroup(1, new DefaultThreadFactory("bossGroup"));
+		// workerGroup即为io线程池
+		EventLoopGroup workerGroup = new NioEventLoopGroup(1, new DefaultThreadFactory("workerGroup"));
+		final EventExecutorGroup businessGroup = new DefaultEventExecutorGroup(1,
+		      new DefaultThreadFactory("businessGroup"));
+		try {
+			ServerBootstrap b = new ServerBootstrap();
+			b.group(bossGroup, workerGroup).channel(NioServerSocketChannel.class)
+			      // handler方法指定的ChannelHandler由bossGroup回调
+			      .handler(new ChannelInitializer<ServerSocketChannel>() {
+				      @Override
+				      protected void initChannel(ServerSocketChannel ch) throws Exception {
+					      ch.pipeline().addLast(new ServerHandler());
+				      }
+			      })
+			      // childHanlder指定的ChannelHandler由workerGroup回调
+			      .childHandler(new ChannelInitializer<SocketChannel>() {
+				      @Override
+				      public void initChannel(SocketChannel ch) throws Exception {
+					      ch.pipeline().addLast(businessGroup, new ClientHandler());
+				      }
+			      });
+			ChannelFuture f = b.bind(port).sync();
+			f.channel().closeFuture().sync();
+		} finally {
+			workerGroup.shutdownGracefully();
+			bossGroup.shutdownGracefully();
+		}
+	}
 
-    public static void main(String[] args) throws Exception {
-        new EchoServer().run();
-    }
+	public static void main(String[] args) throws Exception {
+		new EchoServer().run();
+	}
 }

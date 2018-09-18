@@ -32,6 +32,7 @@ public class TimeServerHandler implements Runnable {
                     writer.println(Calendar.getInstance().getTime().toLocaleString());
                 }
                 writer.flush();
+                Thread.sleep(1000);
             }
         } catch (Exception e) {
             throw new RuntimeException(e);

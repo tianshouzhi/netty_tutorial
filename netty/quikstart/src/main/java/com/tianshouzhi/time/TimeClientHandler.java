@@ -21,6 +21,7 @@ public class TimeClientHandler extends ChannelInboundHandlerAdapter {
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
         String body = (String) msg;
         System.out.println("Now is:" + body);
+        ctx.close();
     }
 
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {

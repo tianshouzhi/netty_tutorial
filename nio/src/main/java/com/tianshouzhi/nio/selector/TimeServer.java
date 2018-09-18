@@ -43,8 +43,10 @@ public class TimeServer {
 					if (selectionKey.isAcceptable()) {
 						ServerSocketChannel server = (ServerSocketChannel) selectionKey.channel();
 						SocketChannel socketChannel = server.accept();
-						socketChannel.configureBlocking(false);
-						socketChannel.register(selector, SelectionKey.OP_READ | SelectionKey.OP_WRITE);
+						if (socketChannel != null) {
+							socketChannel.configureBlocking(false);
+							socketChannel.register(selector, SelectionKey.OP_READ | SelectionKey.OP_WRITE);
+						}
 					}
 
 					// 表示SocketChannel

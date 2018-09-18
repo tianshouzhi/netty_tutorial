@@ -5,10 +5,8 @@ package com.tianshouzhi.time;
  */
 
 import io.netty.bootstrap.ServerBootstrap;
-import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelInitializer;
-import io.netty.channel.ChannelOption;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
@@ -21,11 +19,7 @@ import io.netty.handler.codec.string.StringDecoder;
  */
 public class TimeServer {
 
-    private int port;
-
-    public TimeServer(int port) {
-        this.port = port;
-    }
+    private int port=8080;
 
     public void run() throws Exception {
         EventLoopGroup bossGroup = new NioEventLoopGroup(); // (1)
@@ -41,32 +35,17 @@ public class TimeServer {
                             ch.pipeline().addLast(new StringDecoder());
                             ch.pipeline().addLast(new TimeServerHandler());
                         }
-                    })
-                    .option(ChannelOption.SO_BACKLOG, 128)          // (5)
-                    .option(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT)
-                    .childOption(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT)
-                    .childOption(ChannelOption.SO_KEEPALIVE, true); // (6)
+                    });
 
-            // Bind and start to accept incoming connections.
-            ChannelFuture f = b.bind(port).sync(); // (7)
+            ChannelFuture f = b.bind(port).sync(); // (5)
             System.out.println("TimeServer Started on 8080...");
-            // Wait until the server socket is closed.
-            // In this example, this does not happen, but you can do that to gracefully
-            // shut down your server.
             f.channel().closeFuture().sync();
         } finally {
             workerGroup.shutdownGracefully();
             bossGroup.shutdownGracefully();
         }
     }
-
     public static void main(String[] args) throws Exception {
-        int port;
-        if (args.length > 0) {
-            port = Integer.parseInt(args[0]);
-        } else {
-            port = 8080;
-        }
-        new TimeServer(port).run();
+        new TimeServer().run();
     }
 }

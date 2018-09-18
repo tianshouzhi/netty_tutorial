@@ -12,19 +12,16 @@ public class TimeClientHandler extends ChannelInboundHandlerAdapter {
 
     private byte[] req=("QUERY TIME ORDER" + System.getProperty("line.separator")).getBytes();
 
-    public void channelActive(ChannelHandlerContext ctx) {
+    @Override
+    public void channelActive(ChannelHandlerContext ctx) {//1
         ByteBuf message = Unpooled.buffer(req.length);
         message.writeBytes(req);
         ctx.writeAndFlush(message);
     }
 
+    @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
         String body = (String) msg;
         System.out.println("Now is:" + body);
-    }
-
-    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
-        cause.printStackTrace();
-        ctx.close();
     }
 }

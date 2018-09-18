@@ -12,6 +12,9 @@ public class TimeServer {
         ServerSocket server=null;
         try {
             server=new ServerSocket(8080);
+            server.setReceiveBufferSize(10000);
+//            server.setReuseAddress(false);
+//            System.out.println(server.getReuseAddress());
             System.out.println("TimeServer Started on 8080...");
             while (true){
                 Socket client = server.accept();
