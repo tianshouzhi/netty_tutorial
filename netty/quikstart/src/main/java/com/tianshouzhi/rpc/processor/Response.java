@@ -1,4 +1,4 @@
-package com.tianshouzhi;
+package com.tianshouzhi.rpc.processor;
 
 import java.io.Serializable;
 

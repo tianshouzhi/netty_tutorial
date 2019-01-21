@@ -1,6 +1,6 @@
-package com.tianshouzhi.time;
+package com.tianshouzhi.rpc.invoke;
 
-import com.tianshouzhi.Response;
+import com.tianshouzhi.rpc.processor.Response;
 
 public class RpcInvokeCallback extends RpcInvoke {
 	private Callback callback;

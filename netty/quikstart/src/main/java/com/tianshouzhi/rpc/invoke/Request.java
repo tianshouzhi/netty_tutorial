@@ -1,4 +1,4 @@
-package com.tianshouzhi.time;
+package com.tianshouzhi.rpc.invoke;
 
 import java.io.Serializable;
 

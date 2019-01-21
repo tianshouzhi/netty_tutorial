@@ -1,21 +1,20 @@
-package com.tianshouzhi.time;
-
-import com.tianshouzhi.Response;
+import com.tianshouzhi.rpc.processor.Response;
+import com.tianshouzhi.rpc.invoke.Callback;
+import com.tianshouzhi.rpc.invoke.Request;
+import com.tianshouzhi.rpc.RpcClient;
+import com.tianshouzhi.rpc.invoke.RpcInvokeFuture;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
-import java.sql.Timestamp;
 import java.util.concurrent.CountDownLatch;
 
 public class RpcClientTest {
 	private static RpcClient client = null;
 
 	private static SocketAddress address = new InetSocketAddress("127.0.0.1", 8080);
-
-	private static String requestBody = "QUERY TIME ORDER";
 
 	private static int timeoutMillis = 3000;
 
@@ -27,7 +26,7 @@ public class RpcClientTest {
 
 	@Test
 	public void testInvokeSync() throws InterruptedException {
-		String response = client.invokeSync(address, requestBody, timeoutMillis, String.class);
+		String response = client.invokeSync(address, "i am a sync request", timeoutMillis, String.class);
 		System.out.println(response);
 	}
 
@@ -35,12 +34,12 @@ public class RpcClientTest {
 	public void testInvokeCallback() throws InterruptedException {
 		final CountDownLatch countDownLatch = new CountDownLatch(1);
 		final Thread currentThread = Thread.currentThread();
-		client.invokeCallback(address, requestBody, new Callback() {
+		client.invokeCallback(address, "i am a callback request", new Callback() {
 			public void onComplete(Request request, Response response) {
 				Thread callbackThread = Thread.currentThread();
 				assert currentThread != callbackThread;
 
-				System.out.println(response);
+				System.out.println(response.getResponseBody());
 				countDownLatch.countDown();
 
 			}
@@ -50,11 +49,9 @@ public class RpcClientTest {
 
 	@Test
 	public void testInvokeFuture() throws InterruptedException {
-        System.out.println(new Timestamp(System.currentTimeMillis()).toString());
-        RpcInvokeFuture invokeFuture = client.invokeFuture(address, requestBody, timeoutMillis);
-        System.out.println(new Timestamp(System.currentTimeMillis()).toString());
-        System.out.println(invokeFuture.getResponseBody());
-        System.out.println(new Timestamp(System.currentTimeMillis()).toString());
+        RpcInvokeFuture invokeFuture = client.invokeFuture(address, "i am a future request", timeoutMillis);
+		Object responseBody = invokeFuture.getResponseBody();
+		System.out.println(responseBody);
 
     }
 

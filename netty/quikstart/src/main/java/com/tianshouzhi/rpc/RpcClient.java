@@ -1,6 +1,7 @@
-package com.tianshouzhi.time;
+package com.tianshouzhi.rpc;
 
-import com.tianshouzhi.Response;
+import com.tianshouzhi.rpc.invoke.*;
+import com.tianshouzhi.rpc.processor.Response;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.*;
 import io.netty.channel.nio.NioEventLoopGroup;
@@ -92,7 +93,7 @@ public class RpcClient {
 		rpcInvokeQueue.add(invokeFuture);
 
 		//发送请求
-		channel.writeAndFlush(request).sync();
+		channel.writeAndFlush(request);
 
 		//等待响应
 		return (T) invokeFuture.getResponseBody();
