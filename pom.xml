@@ -12,6 +12,8 @@
         <module>nio</module>
         <module>bio</module>
         <module>netty</module>
+        <module>grpc</module>
+        <module>sofa-bolt</module>
     </modules>
 
     <dependencies>
