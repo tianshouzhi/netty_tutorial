@@ -1,44 +1,27 @@
 package com.tianshouzhi.bio.client;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.PrintWriter;
+import java.io.*;
+import java.net.InetSocketAddress;
 import java.net.Socket;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Created by tianshouzhi on 2018/3/25.
  */
 public class TimeClient {
-    public static void main(String[] args)  {
-        BufferedReader reader = null;
-        PrintWriter writer = null;
-        Socket client=null;
-        try {
-            client=new Socket("127.0.0.1",8080);
-//            ServerSocket server;
+    public static void main(String[] args) throws Exception {
+        Socket client = new Socket();
+        client.setSendBufferSize(8192);
+        client.setReceiveBufferSize(8192);
+        client.connect(new InetSocketAddress("localhost", 8080));
 
-            writer = new PrintWriter(client.getOutputStream());
-            reader = new BufferedReader(new InputStreamReader(client.getInputStream()));
+        System.out.println(client.getReceiveBufferSize());
 
-            while (true){//每隔5秒发送一次请求
-                writer.println("GET CURRENT TIME");
-                writer.flush();
-                String response = reader.readLine();
-                System.out.println("Current Time:"+response);
-                Thread.sleep(5000);
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        } finally {
-            try {
-                writer.close();
-                reader.close();
-                client.close();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
+        OutputStream out = client.getOutputStream();
+        out.write("GET CURRENT TIME".getBytes());
+        out.flush();
+
+        TimeUnit.MINUTES.sleep(10);
 
     }
 }

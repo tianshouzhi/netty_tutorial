@@ -18,13 +18,16 @@
         <module>codec</module>
         <module>channel</module>
         <module>eventloop</module>
+        <module>http2</module>
+        <module>http</module>
+        <module>webosocket</module>
     </modules>
 
     <dependencies>
         <dependency>
             <groupId>io.netty</groupId>
             <artifactId>netty-all</artifactId>
-            <version>4.1.32.Final</version>
+            <version>4.1.34.Final</version>
         </dependency>
     </dependencies>
 </project>
