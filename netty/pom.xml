@@ -21,6 +21,7 @@
         <module>http2</module>
         <module>http</module>
         <module>webosocket</module>
+        <module>rpc</module>
     </modules>
 
     <dependencies>

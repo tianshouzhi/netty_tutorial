@@ -31,6 +31,7 @@ public class EventExecutorGroupTest {
 		});
 		Long elapse = future.get();
 		System.out.println(elapse);
+
 	}
 
 	@Test
