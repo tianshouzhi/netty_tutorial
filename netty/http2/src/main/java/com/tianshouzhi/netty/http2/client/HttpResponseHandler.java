@@ -97,17 +97,16 @@ public class HttpResponseHandler extends SimpleChannelInboundHandler<FullHttpRes
         Entry<ChannelFuture, ChannelPromise> entry = streamidPromiseMap.get(streamId);
         if (entry == null) {
             System.err.println("Message received for unknown stream id " + streamId);
-        } else {
-            // Do stuff with the message (for now just print it)
-            ByteBuf content = msg.content();
-            if (content.isReadable()) {
-                int contentLength = content.readableBytes();
-                byte[] arr = new byte[contentLength];
-                content.readBytes(arr);
-                System.out.println(new String(arr, 0, contentLength, CharsetUtil.UTF_8));
-            }
-
-            entry.getValue().setSuccess();
         }
+        // Do stuff with the message (for now just print it)
+        ByteBuf content = msg.content();
+        if (content.isReadable()) {
+            int contentLength = content.readableBytes();
+            byte[] arr = new byte[contentLength];
+            content.readBytes(arr);
+            System.out.println(new String(arr, 0, contentLength, CharsetUtil.UTF_8));
+        }
+
+//        entry.getValue().setSuccess();
     }
 }

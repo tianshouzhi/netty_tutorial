@@ -15,20 +15,13 @@
 package com.tianshouzhi.netty.http2.client;
 
 import io.netty.bootstrap.Bootstrap;
-import io.netty.channel.Channel;
-import io.netty.channel.ChannelOption;
-import io.netty.channel.EventLoopGroup;
+import io.netty.buffer.Unpooled;
+import io.netty.channel.*;
 import io.netty.channel.nio.NioEventLoopGroup;
+import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.codec.http.*;
-import io.netty.handler.codec.http2.Http2SecurityUtil;
-import io.netty.handler.codec.http2.HttpConversionUtil;
-import io.netty.handler.ssl.*;
-import io.netty.handler.ssl.ApplicationProtocolConfig.Protocol;
-import io.netty.handler.ssl.ApplicationProtocolConfig.SelectedListenerFailureBehavior;
-import io.netty.handler.ssl.ApplicationProtocolConfig.SelectorFailureBehavior;
-import io.netty.handler.ssl.util.InsecureTrustManagerFactory;
-import io.netty.util.AsciiString;
+import io.netty.handler.codec.http2.*;
 import io.netty.util.CharsetUtil;
 
 import java.util.concurrent.TimeUnit;
@@ -37,6 +30,7 @@ import static io.netty.buffer.Unpooled.wrappedBuffer;
 import static io.netty.handler.codec.http.HttpMethod.GET;
 import static io.netty.handler.codec.http.HttpMethod.POST;
 import static io.netty.handler.codec.http.HttpVersion.HTTP_1_1;
+import static io.netty.handler.logging.LogLevel.INFO;
 
 /**
  * An HTTP2 client that allows you to send HTTP2 frames to a server. Inbound and outbound frames are
@@ -45,67 +39,88 @@ import static io.netty.handler.codec.http.HttpVersion.HTTP_1_1;
  */
 public final class Http2Client {
 
-    private static final boolean SSL = System.getProperty("ssl") != null;
-    private static final String HOST = System.getProperty("host", "127.0.0.1");
-    private static final int PORT = Integer.parseInt(System.getProperty("port", SSL? "8443" : "8889"));
-    private static final String URL = System.getProperty("url", "/whatever");
-    private static final String URL2 = System.getProperty("url2");
-    private static final String URL2DATA = System.getProperty("url2data", "test data!");
+    private String host;
+    private int port;
+    private Channel channel;
+    private EventLoopGroup workerGroup;
 
-    public static void main(String[] args) throws Exception {
-        EventLoopGroup workerGroup = new NioEventLoopGroup();
-        Http2ClientInitializer initializer = new Http2ClientInitializer();
-
-        try {
-            // Configure the client.
-            Bootstrap b = new Bootstrap();
-            b.group(workerGroup);
-            b.channel(NioSocketChannel.class);
-            b.option(ChannelOption.SO_KEEPALIVE, true);
-            b.remoteAddress(HOST, PORT);
-            b.handler(initializer);
-
-            // Start the client.
-            Channel channel = b.connect().syncUninterruptibly().channel();
-            System.out.println("Connected to [" + HOST + ':' + PORT + ']');
-
-            // Wait for the HTTP/2 upgrade to occur.
-            Http2SettingsHandler http2SettingsHandler = initializer.settingsHandler();
-            http2SettingsHandler.awaitSettings(5, TimeUnit.SECONDS);
-
-            HttpResponseHandler responseHandler = initializer.responseHandler();
-            int streamId = 3;
-            HttpScheme scheme = SSL ? HttpScheme.HTTPS : HttpScheme.HTTP;
-            AsciiString hostName = new AsciiString(HOST + ':' + PORT);
-            System.err.println("Sending request(s)...");
-            if (URL != null) {
-                // Create a simple GET request.
-                FullHttpRequest request = new DefaultFullHttpRequest(HTTP_1_1, GET, URL);
-                tackle(channel, responseHandler, streamId, scheme, hostName, request);
-                streamId += 2;
-            }
-            if (URL2 != null) {
-                // Create a simple POST request with a body.
-                FullHttpRequest request = new DefaultFullHttpRequest(HTTP_1_1, POST, URL2,
-                        wrappedBuffer(URL2DATA.getBytes(CharsetUtil.UTF_8)));
-                tackle(channel, responseHandler, streamId, scheme, hostName, request);
-            }
-            channel.flush();
-            responseHandler.awaitResponses(5, TimeUnit.SECONDS);
-            System.out.println("Finished HTTP/2 request(s)");
-
-            // Wait until the connection is closed.
-            channel.close().syncUninterruptibly();
-        } finally {
-            workerGroup.shutdownGracefully();
-        }
+    public Http2Client(String host, int port) {
+        this.host = host;
+        this.port = port;
     }
 
-    private static void tackle(Channel channel, HttpResponseHandler responseHandler, int streamId, HttpScheme scheme, AsciiString hostName, FullHttpRequest request) {
-        request.headers().add(HttpHeaderNames.HOST, hostName);
-        request.headers().add(HttpConversionUtil.ExtensionHeaderNames.SCHEME.text(), scheme.name());
-        request.headers().add(HttpHeaderNames.ACCEPT_ENCODING, HttpHeaderValues.GZIP);
-        request.headers().add(HttpHeaderNames.ACCEPT_ENCODING, HttpHeaderValues.DEFLATE);
-        responseHandler.put(streamId, channel.write(request), channel.newPromise());
+    public void start() throws Exception {
+        this.workerGroup = new NioEventLoopGroup();
+        final Http2NegotiationHandler negotiationHandler = new Http2NegotiationHandler();
+        // Configure the client.
+        Bootstrap bootstrap = new Bootstrap()
+                .group(workerGroup)
+                .channel(NioSocketChannel.class)
+                .option(ChannelOption.SO_KEEPALIVE, true)
+                .remoteAddress(host, port)
+                .handler(new ChannelInitializer<SocketChannel>() {
+                    @Override
+                    protected void initChannel(SocketChannel ch) throws Exception {
+                        Http2Connection connection = new DefaultHttp2Connection(false);
+                        HttpToHttp2ConnectionHandler connectionHandler = new HttpToHttp2ConnectionHandlerBuilder()
+                                .frameListener(new DelegatingDecompressorFrameListener(
+                                        connection,
+                                        new InboundHttp2ToHttpAdapterBuilder(connection)
+                                                .maxContentLength(Integer.MAX_VALUE)
+                                                .propagateSettings(true)
+                                                .build()))
+                                .frameLogger(new Http2FrameLogger(INFO))
+                                .connection(connection)
+                                .build();
+
+                        HttpClientCodec sourceCodec = new HttpClientCodec();
+                        Http2ClientUpgradeCodec upgradeCodec = new Http2ClientUpgradeCodec(connectionHandler);
+                        ch.pipeline().addLast(sourceCodec);
+                        ch.pipeline().addLast(new HttpClientUpgradeHandler(sourceCodec, upgradeCodec, 65536));
+                        ch.pipeline().addLast(negotiationHandler);
+                    }
+                });
+
+        // Start the client.
+        this.channel = bootstrap.connect().syncUninterruptibly().await().channel();
+
+        System.out.println("Connected to [" + host + ':' + port + ']');
+
+//        negotiationHandler.awaitSettings(5, TimeUnit.SECONDS);
+        TimeUnit.SECONDS.sleep(5);
+    }
+
+    private void sendRequest(FullHttpRequest request) throws InterruptedException {
+        channel.writeAndFlush(request).sync().await();
+    }
+
+    public void close() {
+        // Wait until the connection is closed.
+        channel.close().syncUninterruptibly();
+        workerGroup.shutdownGracefully();
+    }
+
+    public static void main(String[] args) throws Exception {
+        Http2Client http2Client = new Http2Client("localhost", 8080);
+        http2Client.start();
+
+        // Create a simple GET request.
+        FullHttpRequest getRequest = new DefaultFullHttpRequest(HTTP_1_1, GET, "/whatever", Unpooled.EMPTY_BUFFER);
+        getRequest.headers().add(HttpHeaderNames.HOST, "localhost");
+        getRequest.headers().add(HttpConversionUtil.ExtensionHeaderNames.SCHEME.text(), HttpScheme.HTTP.name());
+        getRequest.headers().add(HttpHeaderNames.ACCEPT_ENCODING, HttpHeaderValues.GZIP);
+        getRequest.headers().add(HttpHeaderNames.ACCEPT_ENCODING, HttpHeaderValues.DEFLATE);
+        http2Client.sendRequest(getRequest);
+
+        // Create a simple POST request with a body.
+        FullHttpRequest postRequest = new DefaultFullHttpRequest(HTTP_1_1, POST, "/",
+                wrappedBuffer("TEST POST Request".getBytes(CharsetUtil.UTF_8)));
+        postRequest.headers().add(HttpHeaderNames.HOST, "localhost");
+        postRequest.headers().add(HttpConversionUtil.ExtensionHeaderNames.SCHEME.text(), HttpScheme.HTTP.name());
+        postRequest.headers().add(HttpHeaderNames.ACCEPT_ENCODING, HttpHeaderValues.GZIP);
+        postRequest.headers().add(HttpHeaderNames.ACCEPT_ENCODING, HttpHeaderValues.DEFLATE);
+        http2Client.sendRequest(postRequest);
+
+        http2Client.close();
     }
 }
